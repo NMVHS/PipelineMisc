@@ -52,7 +52,7 @@
 3.  lastline "C:\Program Files\Autodesk\Maya%MAYA_VERSION%\bin\mayabatch.exe"
 
 ### Create .bat Launcher for MayaBatch
-1.  Same as Maya launcher, except last line:  
+1.  Same as Maya launcher, except last line:
     ```
     start /b /wait "" "C:\Program Files\Autodesk\Maya%MAYA_VERSION%\bin\mayabatch.exe" %*
     ```
@@ -61,6 +61,7 @@
 We set the specific .bat launcher for deadline to pickup, now we need to tell deadline where it is.
 
 ### Include MayaBatchLauncherPath in mayabatch.bat (this one is for deadline only) launcher
+1.  Add this to the end
     ```
     set MAYABATCH_LAUNCHER_PATH=Z:\System\Launchers\Maya\Configs\MayaBatch_%MAYA_VERSION%_RS_%REDSHIFT_VERSION%.bat
     ```
