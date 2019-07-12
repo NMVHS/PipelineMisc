@@ -32,7 +32,14 @@
     set MAYA_MODULE_PATH=%MAYA_MODULE_PATH%;%PIPELINE_MAYA_COMMON%\modules
     set MAYA_SCRIPT_PATH=%MAYA_SCRIPT_PATH%;%PIPELINE_MAYA_COMMON%\scripts
     ```
-
+    test if you need  
+    ```
+    import os
+    myPath = os.environ['MAYA_SCRIPT_PATH']
+    for each in myPath.split(";"):
+        print each
+    ```
+    
 2.  Redshift Custom Install  
     https://docs.redshift3d.com/display/RSDOCS/Custom+Install+Locations?product=maya  
 
@@ -64,6 +71,11 @@ We set the specific .bat launcher for deadline to pickup, now we need to tell de
 1.  Add this to the end
     ```
     set MAYABATCH_LAUNCHER_PATH=Z:\System\Launchers\Maya\Configs\MayaBatch_%MAYA_VERSION%_RS_%REDSHIFT_VERSION%.bat
+    ```
+2.  Test is after open Maya
+    ```
+    $s=`getenv "MAYABATCH_LAUNCHER_PATH"`;
+    print $s;
     ```
 
 ### Include MayaBatchLauncherPath in job subbmitter
