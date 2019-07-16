@@ -56,12 +56,9 @@
     set REDSHIFT_LICENSEPATH=%REDSHIFT_LOCALDATAPATH%
     ```
 
-3.  lastline "C:\Program Files\Autodesk\Maya%MAYA_VERSION%\bin\mayabatch.exe"
-
-### Create .bat Launcher for MayaBatch
-1.  Same as Maya launcher, except last line:
+3.  Same as Maya launcher, except last line, %RESTVAR% are arguments from deadline:
     ```
-    start /b /wait "" "C:\Program Files\Autodesk\Maya%MAYA_VERSION%\bin\mayabatch.exe" %*
+    if %USE_BATCH%==1 (start /b /wait "" "C:\Program Files\Autodesk\Maya%MAYA_VERSION%\bin\mayabatch.exe" %RESTVAR%) else ("C:\Program Files\Autodesk\Maya%MAYA_VERSION%\bin\maya.exe")
     ```
 
 ## Deadline render executable configuration
@@ -70,7 +67,8 @@ We set the specific .bat launcher for deadline to pickup, now we need to tell de
 ### Include MayaBatchLauncherPath in mayabatch.bat (this one is for deadline only) launcher
 1.  Add this to the end
     ```
-    set MAYABATCH_LAUNCHER_PATH=Z:\System\Launchers\Maya\Configs\MayaBatch_%MAYA_VERSION%_RS_%REDSHIFT_VERSION%.bat
+    set MAYABATCH_LAUNCHER_PATH=Z:\System\Launchers\Maya\Configs\Maya_Rs_launcher.bat
+    set MAYABATCH_LAUNCHER_ARGS=%MAYA_VERSION% %REDSHIFT_VERSION% 1
     ```
 2.  Test is after open Maya
     ```
@@ -82,6 +80,7 @@ We set the specific .bat launcher for deadline to pickup, now we need to tell de
 1.  Add this to the end of "proc string WriteJobFilesAndSubmit()" in SubmitToDeadline.mel before $fileId closed.
     ```
     fprint $fileId ("MayaBatchLauncherPath=" + `getenv "MAYABATCH_LAUNCHER_PATH"` + "\n");
+    fprint $fileId ("MayaBatchLauncherArgs=" + `getenv "MAYABATCH_LAUNCHER_ARGS"` + "\n");
     ```
 
 ### Tell Deadline to find the right executeble based on MayaBatchLauncherPath
@@ -92,6 +91,11 @@ We set the specific .bat launcher for deadline to pickup, now we need to tell de
     ```
     mayaExecutable = self.deadlinePlugin.GetPluginInfoEntry( "MayaBatchLauncherPath" )
     return mayaExecutable
+    ```
+    Add this to "def RenderArgument( self )":
+    ```
+    renderArguments = self.deadlinePlugin.GetPluginInfoEntry( "MayaBatchLauncherArgs" ) + " "
+    renderArguments += "-prompt"
     ```
 
 2.  Modify MayaBatch.options in [DeadlineRepository]\plugins\MayaBatch  
@@ -104,6 +108,15 @@ We set the specific .bat launcher for deadline to pickup, now we need to tell de
     Category=Maya Info
     Index=1
     Description=This parameter defines the .bat launcher path for deadline render executable.
+    Required=false
+    DisableIfBlank=true
+    
+    [MayaBatchLauncherArgs]
+    Type=label
+    Label=Maya Batch Launcher Args
+    Category=Launcher Info
+    Index=1
+    Description=This parameter defines the .bat launcher arguments for deadline render executable.
     Required=false
     DisableIfBlank=true
     ```
