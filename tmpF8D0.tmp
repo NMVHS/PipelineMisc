@@ -1,0 +1,107 @@
+
+////////////////////////////////////////////////////////////////////////////
+// Starting Mel program
+
+proc mapXGen() {
+
+catchQuiet ( python("import xgenm as xg") );
+string $palettes[];
+clear $palettes;
+catchQuiet ( $palettes = python("xg.palettes()") );
+if ( `size $palettes` == 0 )
+    return;
+
+string $deadlineMappings[] = { "X:/", "", "X://", "", "/Volumes/hammerstein/", "//172.16.0.254/hammerstein/" };
+string $descriptions[];
+string $objects[];
+string $attributes[];
+for ( $palette in $palettes )
+{
+    clear $descriptions;
+    $descriptions = python("xg.descriptions( \"" + $palette + "\" )");
+    for ( $description in $descriptions )
+    {
+        clear $objects;
+        $objects = python("xg.objects( \"" + $palette + "\", \"" + $description + "\" )");
+        for ( $object in $objects )
+        {
+            clear $attributes;
+            $attributes = python("xg.attrs( \"" + $palette + "\", \"" + $description + "\", \"" + $object + "\" )");
+            for( $attribute in $attributes )
+            {
+                string $attrVal = python("xg.getAttr( \"" + $attribute + "\",\"" + $palette + "\", \"" + $description + "\", \"" + $object + "\" )");
+                string $newAttrVal = $attrVal;
+                for( $i = 0; $i < size($deadlineMappings); $i += 2 )    
+                {
+                    $newAttrVal = substituteAllString($newAttrVal, $deadlineMappings[ $i ], $deadlineMappings[ $i+1 ] );
+                }
+
+                if ( $newAttrVal != $attrVal )
+                {
+                    string $escapedNewAttrVal = substituteAllString($newAttrVal, "\"", "\\\"");
+
+                    string $command = "xg.setAttr( \"" + $attribute + "\",\"" + $escapedNewAttrVal + "\",\"" + $palette + "\", \"" + $description + "\", \"" + $object + "\" )";
+
+
+                    python("xg.setAttr( \"" + $attribute + "\",\"" + $escapedNewAttrVal + "\",\"" + $palette + "\", \"" + $description + "\", \"" + $object + "\" )");
+                    print ( "Changing "+$attrVal + "\n" );
+                    print ( "\nTo "+$newAttrVal + "\n" );
+                }
+            }
+        }
+    }
+}
+}
+
+proc renderIt(string $name) {
+
+string $rl=""; string $rp=""; float $resize=-1.; loadPlugin -quiet redshift4maya; redshiftRegisterRenderer(); if( catchQuiet( eval( "redshiftGetRedshiftOptionsNode()" ) ) ) { eval( "redshiftGetRedshiftOptionsNode(true)" ); }
+mapXGen();
+removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.animation; setAttr defaultRenderGlobals.animation 1; removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.startFrame; setAttr defaultRenderGlobals.startFrame 101;
+removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.animation; setAttr defaultRenderGlobals.animation 1; removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.endFrame; setAttr defaultRenderGlobals.endFrame 101;
+removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.byFrameStep; catch(`setAttr defaultRenderGlobals.byFrameStep 1`);
+
+string $redshiftVersion = `pluginInfo -q -version "redshift4maya"`;string $redshiftVersions[];$redshiftVersions = stringToStringArray($redshiftVersion, ".");float $majorVersion = ( float )( $redshiftVersions[0]+"."+$redshiftVersions[1] );if( $majorVersion >1.2 || ( $majorVersion == 1.2 && (int)$redshiftVersions[2] > 81) ){ removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.imageFilePrefix; catch(`setAttr -type "string" defaultRenderGlobals.imageFilePrefix "<Scene>/<Layer>/<Scene>_<Layer>"`); } else { removeRenderLayerAdjustmentAndUnlock redshiftOptions.imageFilePrefix; catch(`setAttr -type "string" redshiftOptions.imageFilePrefix "<Scene>/<Layer>/<Scene>_<Layer>"`); }
+workspace -fr "images" "X:/Projects/PlasticWax_Diesel_257/03_Shots/lookDev/MAYA/renders"; workspace -fr "depth" "X:/Projects/PlasticWax_Diesel_257/03_Shots/lookDev/MAYA/renders";
+makeCameraRenderable("lookDevCam_02");
+removeRenderLayerAdjustmentAndUnlock defaultResolution.width; catch(`setAttr defaultResolution.width 1920`);
+removeRenderLayerAdjustmentAndUnlock defaultResolution.height; catch(`setAttr defaultResolution.height 1080`);
+
+
+
+
+
+
+
+setAttr redshiftOptions.logLevel 2;
+$rl="rs__main";
+
+redshiftSelectCudaDevices({3});
+setMayaSoftwareLayers($rl, $rp); setImageSizePercent($resize); redshiftBatchRender("");
+
+}
+
+//
+// Main part
+//
+proc mainDeadlineRender() {
+
+string $sceneName = "X:/Projects/PlasticWax_Diesel_257/03_Shots/lookDev/MAYA/scenes/car_lookdev_v008_sw.ma";
+print ("Loading scene: " + $sceneName + "\n");
+
+dirmap -en true;
+dirmap -m "/Volumes/hammerstein/" "//172.16.0.254/hammerstein/";
+int $loadFailed = catchQuiet( `file -o $sceneName` );
+string $checkScene = `file -q -sn`;
+if ($checkScene=="") {
+error ("Cannot load scene \"" + $sceneName + "\". Please check the scene path, then try opening the scene on the machine which ran this job to troubleshoot the problem.\n");
+} else if (catch(`renderIt($sceneName)`)) {
+error ("Render failed.\n");
+} else {
+print ("Render completed.\n");
+}
+
+}
+mainDeadlineRender();
+// Ending Mel program
+

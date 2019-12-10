@@ -1,0 +1,53 @@
+
+////////////////////////////////////////////////////////////////////////////
+// Starting Mel program
+
+
+proc renderIt(string $name) {
+
+string $rl=""; string $rp=""; float $resize=-1.; loadPlugin -quiet redshift4maya; redshiftRegisterRenderer(); if( catchQuiet( eval( "redshiftGetRedshiftOptionsNode()" ) ) ) { eval( "redshiftGetRedshiftOptionsNode(true)" ); }
+removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.animation; setAttr defaultRenderGlobals.animation 1; removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.startFrame; setAttr defaultRenderGlobals.startFrame 346;
+removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.animation; setAttr defaultRenderGlobals.animation 1; removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.endFrame; setAttr defaultRenderGlobals.endFrame 346;
+removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.byFrameStep; catch(`setAttr defaultRenderGlobals.byFrameStep 1`);
+
+string $redshiftVersion = `pluginInfo -q -version "redshift4maya"`;string $redshiftVersions[];$redshiftVersions = stringToStringArray($redshiftVersion, ".");float $majorVersion = ( float )( $redshiftVersions[0]+"."+$redshiftVersions[1] );if( $majorVersion >1.2 || ( $majorVersion == 1.2 && (int)$redshiftVersions[2] > 81) ){ removeRenderLayerAdjustmentAndUnlock defaultRenderGlobals.imageFilePrefix; catch(`setAttr -type "string" defaultRenderGlobals.imageFilePrefix "<Scene>/<RenderLayer>/<Scene>_<RenderLayer>"`); } else { removeRenderLayerAdjustmentAndUnlock redshiftOptions.imageFilePrefix; catch(`setAttr -type "string" redshiftOptions.imageFilePrefix "<Scene>/<RenderLayer>/<Scene>_<RenderLayer>"`); }
+workspace -fr "images" "X:/Projects/Scentre_Stirling_254/03_Shots/w04/MAYA/renders"; workspace -fr "depth" "X:/Projects/Scentre_Stirling_254/03_Shots/w04/MAYA/renders";
+
+removeRenderLayerAdjustmentAndUnlock defaultResolution.width; catch(`setAttr defaultResolution.width 1920`);
+removeRenderLayerAdjustmentAndUnlock defaultResolution.height; catch(`setAttr defaultResolution.height 1080`);
+
+
+
+
+
+
+
+setAttr redshiftOptions.logLevel 2;
+$rl="_atmos_sun";
+
+redshiftSelectCudaDevices({1});
+setMayaSoftwareLayers($rl, $rp); setImageSizePercent($resize); redshiftBatchRender("");
+
+}
+
+//
+// Main part
+//
+proc mainDeadlineRender() {
+
+string $sceneName = "X:/Projects/Scentre_Stirling_254/03_Shots/w04/MAYA/scenes/light/w04_light_v011_cd_2016.ma";
+print ("Loading scene: " + $sceneName + "\n");
+
+string $checkScene = `file -q -sn`;
+if ($checkScene=="") {
+error ("Cannot load scene \"" + $sceneName + "\". Please check the scene path, then try opening the scene on the machine which ran this job to troubleshoot the problem.\n");
+} else if (catch(`renderIt($sceneName)`)) {
+error ("Render failed.\n");
+} else {
+print ("Render completed.\n");
+}
+
+}
+mainDeadlineRender();
+// Ending Mel program
+
